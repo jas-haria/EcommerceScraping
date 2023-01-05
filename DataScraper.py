@@ -6,7 +6,9 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
 
+
 filename = "data.xlsx"
+
 
 def get_driver():
     options = Options()
@@ -15,12 +17,12 @@ def get_driver():
     return driver
 
 
-def scrape_amazon(driver, df_urls, current_date, df_amazon_raw):
+def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
     ratings = list()
     reviews = list()
     rating = None
     review = None
-    for url in df_urls['Amazon URL']:
+    for url in df_amazon_urls['URL']:
         try:
             driver.get(url)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -41,12 +43,12 @@ def scrape_amazon(driver, df_urls, current_date, df_amazon_raw):
     return df_amazon_raw
 
 
-def scrape_flipkart(driver, df_urls, current_date, df_flipkart_raw):
+def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
     ratings = list()
     reviews = list()
     rating = None
     review = None
-    for url in df_urls['Flipkart URL']:
+    for url in df_flipkart_urls['URL']:
         try:
             driver.get(url)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -72,19 +74,22 @@ def scrape_flipkart(driver, df_urls, current_date, df_flipkart_raw):
 
 
 def scrape_data():
-    df_urls = pd.read_excel(filename, sheet_name="All URLs")
+    df_amazon_urls = pd.read_excel(filename, sheet_name="Amazon URL")
+    df_flipkart_urls = pd.read_excel(filename, sheet_name="Flipkart URL")
     df_amazon_raw = pd.read_excel(filename, sheet_name="Amazon - Raw")
     df_flipkart_raw = pd.read_excel(filename, sheet_name="Amazon - Raw")
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     driver = get_driver()
     current_date = str(datetime.now().day) + "/" + str(datetime.now().month)
 
-    df_amazon_raw = scrape_amazon(driver, df_urls, current_date, df_amazon_raw)
-    df_flipkart_raw = scrape_flipkart(driver, df_urls, current_date, df_flipkart_raw)
+    df_amazon_raw = scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw)
+    df_flipkart_raw = scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw)
 
-    df_urls.to_excel(excel_writer=writer, index=False, sheet_name="All URLs")
+    df_amazon_urls.to_excel(excel_writer=writer, index=False, sheet_name="Amazon URL")
+    df_flipkart_urls.to_excel(excel_writer=writer, index=False, sheet_name="Flipkart URL")
     df_amazon_raw.to_excel(excel_writer=writer, index=False, sheet_name="Amazon - Raw")
     df_flipkart_raw.to_excel(excel_writer=writer, index=False, sheet_name="Flipkart - Raw")
+    driver.close()
     writer.close()
 
 
