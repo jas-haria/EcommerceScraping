@@ -42,8 +42,8 @@ def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             raw_data = soup.find('div', attrs={'data-hook': 'cr-filter-info-review-rating-count'}).text.strip()
             split_data = raw_data.split("total ratings,")
-            rating = split_data[0].strip().replace(",", "")
-            review = split_data[1].split("with reviews")[0].strip().replace(",", "")
+            rating = int(split_data[0].strip().replace(",", ""))
+            review = int(split_data[1].split("with reviews")[0].strip().replace(",", ""))
         except:
             rating = -1
             review = -1
@@ -77,11 +77,11 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             raw_rating_data = soup.find(lambda tag: tag.name == "span" and "Ratings" in tag.text and "Reviews" not in tag.text).get_text(strip=True)
             split_data = raw_rating_data.split("Ratings")
-            rating = split_data[0].strip().replace(",", "")
+            rating = int(split_data[0].strip().replace(",", ""))
             raw_review_data = soup.find(lambda tag: tag.name == "span" and "Ratings" not in tag.text and "Reviews" in tag.text).get_text(strip=True)
 
             split_data = raw_review_data.split("Reviews")
-            review = split_data[0].strip().replace(",", "")
+            review = int(split_data[0].strip().replace(",", ""))
         except:
             rating = -1
             review = -1
@@ -104,6 +104,13 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
     return df_flipkart_raw
 
 
+def get_daily(df):
+    num_of_cols = len(df.columns)
+    for i in range(0, num_of_cols - 2):
+        df.iloc[:, i] = df.iloc[:, i] - df.iloc[:, i + 2]
+    return df
+
+
 def scrape_data():
     drive = google_auth()
     file = drive.CreateFile({'id': file_id})
@@ -118,11 +125,15 @@ def scrape_data():
 
     df_amazon_raw = scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw)
     df_flipkart_raw = scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw)
+    df_flipkart_daily = get_daily(df_flipkart_raw)
+    df_amazon_daily = get_daily(df_amazon_raw)
 
     df_amazon_urls.to_excel(excel_writer=writer, index=False, sheet_name="Amazon URL")
     df_flipkart_urls.to_excel(excel_writer=writer, index=False, sheet_name="Flipkart URL")
     df_amazon_raw.to_excel(excel_writer=writer, index=False, sheet_name="Amazon - Raw")
     df_flipkart_raw.to_excel(excel_writer=writer, index=False, sheet_name="Flipkart - Raw")
+    df_amazon_daily.to_excel(excel_writer=writer, index=False, sheet_name="Amazon - Daily")
+    df_flipkart_daily.to_excel(excel_writer=writer, index=False, sheet_name="Flipkart - Daily")
     driver.close()
     writer.close()
     update_file = drive.CreateFile({'id': file_id})
