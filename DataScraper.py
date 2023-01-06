@@ -5,9 +5,15 @@ from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+from oauth2client.service_account import ServiceAccountCredentials
+import time
+
 
 
 filename = "data.xlsx"
+file_id = "1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz"
 
 
 def get_driver():
@@ -15,6 +21,13 @@ def get_driver():
     options.add_argument("--headless")
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     return driver
+
+
+def google_auth():
+    gauth = GoogleAuth()
+    scope = ["https://www.googleapis.com/auth/drive"]
+    gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    return GoogleDrive(gauth)
 
 
 def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
@@ -25,6 +38,7 @@ def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
     for url in df_amazon_urls['URL']:
         try:
             driver.get(url)
+            time.sleep(2)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             raw_data = soup.find('div', attrs={'data-hook': 'cr-filter-info-review-rating-count'}).text.strip()
             split_data = raw_data.split("total ratings,")
@@ -38,6 +52,14 @@ def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
             reviews.append(review)
     df_amazon_raw = df_amazon_raw.drop(columns="Rat - " + current_date, axis=1, errors='ignore')
     df_amazon_raw = df_amazon_raw.drop(columns="Rev - " + current_date, axis=1, errors='ignore')
+    if len(df_amazon_raw) < len(ratings):
+        difference = len(ratings) - len(df_amazon_raw)
+        columns_length = len(df_amazon_raw.columns)
+        dummy_list = [-1] * columns_length
+        for i in range(difference):
+            df_amazon_raw = df_amazon_raw.append(pd.DataFrame([dummy_list],
+                                                              columns=list(df_amazon_raw.columns)),
+                                                 ignore_index=True)
     df_amazon_raw.insert(loc=0, column="Rat - " + current_date, value=ratings)
     df_amazon_raw.insert(loc=0, column="Rev - " + current_date, value=reviews)
     return df_amazon_raw
@@ -51,6 +73,7 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
     for url in df_flipkart_urls['URL']:
         try:
             driver.get(url)
+            time.sleep(2)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             raw_rating_data = soup.find(lambda tag: tag.name == "span" and "Ratings" in tag.text and "Reviews" not in tag.text).get_text(strip=True)
             split_data = raw_rating_data.split("Ratings")
@@ -68,16 +91,27 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
 
     df_flipkart_raw = df_flipkart_raw.drop(columns="Rat - " + current_date, axis=1, errors='ignore')
     df_flipkart_raw = df_flipkart_raw.drop(columns="Rev - " + current_date, axis=1, errors='ignore')
+    if len(df_flipkart_raw) < len(ratings):
+        difference = len(ratings) - len(df_flipkart_raw)
+        columns_length = len(df_flipkart_raw.columns)
+        dummy_list = [-1] * columns_length
+        for i in range(difference):
+            df_flipkart_raw = df_flipkart_raw.append(pd.DataFrame([dummy_list],
+                                                                  columns=list(df_flipkart_raw.columns)),
+                                                     ignore_index=True)
     df_flipkart_raw.insert(loc=0, column="Rat - " + current_date, value=ratings)
     df_flipkart_raw.insert(loc=0, column="Rev - " + current_date, value=reviews)
     return df_flipkart_raw
 
 
 def scrape_data():
+    drive = google_auth()
+    file = drive.CreateFile({'id': file_id})
+    file.GetContentFile(filename)
     df_amazon_urls = pd.read_excel(filename, sheet_name="Amazon URL")
     df_flipkart_urls = pd.read_excel(filename, sheet_name="Flipkart URL")
     df_amazon_raw = pd.read_excel(filename, sheet_name="Amazon - Raw")
-    df_flipkart_raw = pd.read_excel(filename, sheet_name="Amazon - Raw")
+    df_flipkart_raw = pd.read_excel(filename, sheet_name="Flipkart - Raw")
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     driver = get_driver()
     current_date = str(datetime.now().day) + "/" + str(datetime.now().month)
@@ -91,6 +125,9 @@ def scrape_data():
     df_flipkart_raw.to_excel(excel_writer=writer, index=False, sheet_name="Flipkart - Raw")
     driver.close()
     writer.close()
+    update_file = drive.CreateFile({'id': file_id})
+    update_file.SetContentFile(filename)
+    update_file.Upload()
 
 
 scrape_data()
