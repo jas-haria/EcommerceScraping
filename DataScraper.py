@@ -110,12 +110,12 @@ def get_daily(df, df_urls):
         df.iloc[:, i] = df.iloc[:, i] - df.iloc[:, i + 2]
     columns_to_delete = [x for x in df.columns if str(x).startswith("Rev")]
     df = df.drop(columns=columns_to_delete, axis=1)
-    df_urls["Weekly Sales (Ratings * 4)"] = 0
+    df_urls["Weekly Sales (Ratings * 5)"] = 0
     for i in range(0, len(df)):
-        df_urls["Weekly Sales (Ratings * 4)"][i] = 0
+        df_urls["Weekly Sales (Ratings * 5)"][i] = 0
         for j in range(0, min(7, len(df.columns))):
-            df_urls["Weekly Sales (Ratings * 4)"][i] += df.iloc[i, j]
-        df_urls["Weekly Sales (Ratings * 4)"][i] *= 5
+            df_urls["Weekly Sales (Ratings * 5)"][i] += df.iloc[i, j]
+        df_urls["Weekly Sales (Ratings * 5)"][i] *= 5
     df = df_urls.join(df)
     return df
 
