@@ -14,6 +14,9 @@ import time
 
 filename = "data.xlsx"
 file_id = "1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz"
+weekly_sales_column = "Weekly Sales (Ratings * 5)"
+total_sales_column = "Total Sales (Total Ratings * 5)"
+weekly_by_total_sales_column = "Weekly Sales / Total Sales"
 
 
 def get_driver():
@@ -110,12 +113,21 @@ def get_daily(df, df_urls):
         df.iloc[:, i] = df.iloc[:, i] - df.iloc[:, i + 2]
     columns_to_delete = [x for x in df.columns if str(x).startswith("Rev")]
     df = df.drop(columns=columns_to_delete, axis=1)
-    df_urls["Weekly Sales (Ratings * 5)"] = 0
+    df_urls[weekly_sales_column] = 0
+    df_urls[total_sales_column] = 0
+    df_urls[weekly_by_total_ratings_column] = 0
     for i in range(0, len(df)):
-        df_urls["Weekly Sales (Ratings * 5)"][i] = 0
-        for j in range(0, min(7, len(df.columns))):
-            df_urls["Weekly Sales (Ratings * 5)"][i] += df.iloc[i, j]
-        df_urls["Weekly Sales (Ratings * 5)"][i] *= 5
+        df_urls[weekly_sales_column][i] = 0
+        df_urls[total_sales_column][i] = 0
+        df_urls[weekly_by_total_ratings_column][i] = 0
+        for j in range(0, len(df.columns)):
+            if j < 7:
+                df_urls[weekly_sales_column][i] += max(df.iloc[i, j], 0)
+            df_urls[total_sales_column][i] += max(df.iloc[i, j], 0)
+        df_urls[weekly_sales_column][i] *= 5
+        df_urls[total_sales_column][i] *= 5
+        if df_urls[total_sales_column][i] > 0:
+            df_urls[weekly_by_total_ratings_column][i] = df_urls[weekly_sales_column][i] * 100 / df_urls[total_sales_column][i]
     df = df_urls.join(df)
     return df
 
