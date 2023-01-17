@@ -11,7 +11,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import time
 
 
-
 filename = "data.xlsx"
 file_id = "1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz"
 weekly_sales_column = "Weekly Sales (Ratings * 5)"
