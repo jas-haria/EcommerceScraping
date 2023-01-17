@@ -115,11 +115,11 @@ def get_daily(df, df_urls):
     df = df.drop(columns=columns_to_delete, axis=1)
     df_urls[weekly_sales_column] = 0
     df_urls[total_sales_column] = 0
-    df_urls[weekly_by_total_ratings_column] = 0
+    df_urls[weekly_by_total_sales_column] = 0
     for i in range(0, len(df)):
         df_urls[weekly_sales_column][i] = 0
         df_urls[total_sales_column][i] = 0
-        df_urls[weekly_by_total_ratings_column][i] = 0
+        df_urls[weekly_by_total_sales_column][i] = 0
         for j in range(0, len(df.columns)):
             if j < 7:
                 df_urls[weekly_sales_column][i] += max(df.iloc[i, j], 0)
@@ -127,7 +127,7 @@ def get_daily(df, df_urls):
         df_urls[weekly_sales_column][i] *= 5
         df_urls[total_sales_column][i] *= 5
         if df_urls[total_sales_column][i] > 0:
-            df_urls[weekly_by_total_ratings_column][i] = df_urls[weekly_sales_column][i] * 100 / df_urls[total_sales_column][i]
+            df_urls[weekly_by_total_sales_column][i] = df_urls[weekly_sales_column][i] * 100 / df_urls[total_sales_column][i]
     df = df_urls.join(df)
     return df
 
