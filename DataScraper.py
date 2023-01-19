@@ -9,6 +9,7 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from oauth2client.service_account import ServiceAccountCredentials
 import time
+import numpy as np
 
 
 filename = "data.xlsx"
@@ -47,8 +48,8 @@ def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
             rating = int(split_data[0].strip().replace(",", ""))
             review = int(split_data[1].split("with reviews")[0].strip().replace(",", ""))
         except:
-            rating = -1
-            review = -1
+            rating = np.nan
+            review = np.nan
         finally:
             ratings.append(rating)
             reviews.append(review)
@@ -57,7 +58,7 @@ def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
     if len(df_amazon_raw) < len(ratings):
         difference = len(ratings) - len(df_amazon_raw)
         columns_length = len(df_amazon_raw.columns)
-        dummy_list = [-1] * columns_length
+        dummy_list = [np.nan] * columns_length
         for i in range(difference):
             df_amazon_raw = df_amazon_raw.append(pd.DataFrame([dummy_list],
                                                               columns=list(df_amazon_raw.columns)),
@@ -85,8 +86,8 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
             split_data = raw_review_data.split("Reviews")
             review = int(split_data[0].strip().replace(",", ""))
         except:
-            rating = -1
-            review = -1
+            rating = np.nan
+            review = np.nan
         finally:
             ratings.append(rating)
             reviews.append(review)
@@ -96,7 +97,7 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
     if len(df_flipkart_raw) < len(ratings):
         difference = len(ratings) - len(df_flipkart_raw)
         columns_length = len(df_flipkart_raw.columns)
-        dummy_list = [-1] * columns_length
+        dummy_list = [np.nan] * columns_length
         for i in range(difference):
             df_flipkart_raw = df_flipkart_raw.append(pd.DataFrame([dummy_list],
                                                                   columns=list(df_flipkart_raw.columns)),
@@ -121,8 +122,8 @@ def get_daily(df, df_urls):
         df_urls[weekly_by_total_sales_column][i] = 0
         for j in range(0, len(df.columns)):
             if j < 7:
-                df_urls[weekly_sales_column][i] += max(df.iloc[i, j], 0)
-            df_urls[total_sales_column][i] += max(df.iloc[i, j], 0)
+                df_urls[weekly_sales_column][i] += df.iloc[i, j] if not np.isnan(df.iloc[i, j]) else 0
+            df_urls[total_sales_column][i] += df.iloc[i, j] if not np.isnan(df.iloc[i, j]) else 0
         df_urls[weekly_sales_column][i] *= 5
         df_urls[total_sales_column][i] *= 5
         if df_urls[total_sales_column][i] > 0:
