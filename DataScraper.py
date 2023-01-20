@@ -12,11 +12,12 @@ import time
 import numpy as np
 
 
-filename = "data.xlsx"
-file_id = "1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz"
+filenames = ["earbuds.xlsx", "headphones.xlsx"]
+file_ids = ["1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz", "1DtfJS6bGyYw89Jd62dotrgXqDlmP79NI"]
 weekly_sales_column = "Weekly Sales (Ratings * 5)"
 total_sales_column = "Total Sales (Total Ratings * 5)"
 weekly_by_total_sales_column = "Weekly Sales / Total Sales"
+sleep_time = 10
 
 
 def get_driver():
@@ -41,7 +42,7 @@ def scrape_amazon(driver, df_amazon_urls, current_date, df_amazon_raw):
     for url in df_amazon_urls['URL']:
         try:
             driver.get(url)
-            time.sleep(3)
+            time.sleep(sleep_time)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             raw_data = soup.find('div', attrs={'data-hook': 'cr-filter-info-review-rating-count'}).text.strip()
             split_data = raw_data.split("total ratings,")
@@ -76,13 +77,12 @@ def scrape_flipkart(driver, df_flipkart_urls, current_date, df_flipkart_raw):
     for url in df_flipkart_urls['URL']:
         try:
             driver.get(url)
-            time.sleep(3)
+            time.sleep(sleep_time)
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             raw_rating_data = soup.find(lambda tag: tag.name == "span" and "Ratings" in tag.text and "Reviews" not in tag.text).get_text(strip=True)
             split_data = raw_rating_data.split("Ratings")
             rating = int(split_data[0].strip().replace(",", ""))
             raw_review_data = soup.find(lambda tag: tag.name == "span" and "Ratings" not in tag.text and "Reviews" in tag.text).get_text(strip=True)
-
             split_data = raw_review_data.split("Reviews")
             review = int(split_data[0].strip().replace(",", ""))
         except:
@@ -127,12 +127,13 @@ def get_daily(df, df_urls):
         df_urls[weekly_sales_column][i] *= 5
         df_urls[total_sales_column][i] *= 5
         if df_urls[total_sales_column][i] > 0:
-            df_urls[weekly_by_total_sales_column][i] = df_urls[weekly_sales_column][i] * 100 / df_urls[total_sales_column][i]
+            weekly_by_total_sales = df_urls[weekly_sales_column][i] * 100 / df_urls[total_sales_column][i]
+            df_urls[weekly_by_total_sales_column][i] = round(weekly_by_total_sales, 2)
     df = df_urls.join(df)
     return df
 
 
-def scrape_data():
+def scrape_data(filename, file_id):
     drive = google_auth()
     file = drive.CreateFile({'id': file_id})
     file.GetContentFile(filename)
@@ -166,4 +167,5 @@ def scrape_data():
     update_file.Upload()
 
 
-scrape_data()
+for f_name, f_id in zip(filenames, file_ids):
+    scrape_data(f_name, f_id)
