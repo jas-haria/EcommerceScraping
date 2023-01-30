@@ -12,8 +12,9 @@ import time
 import numpy as np
 
 
-filenames = ["earbuds.xlsx", "headphones.xlsx"]
-file_ids = ["1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz", "1DtfJS6bGyYw89Jd62dotrgXqDlmP79NI"]
+filenames = ["earbuds.xlsx", "headphones.xlsx", "speakers.xlsx", "wired earphones.xlsx"]
+file_ids = ["1Hn7wEEtDfJMhFsqfnVBctsDHtqM6ZdDz", "1DtfJS6bGyYw89Jd62dotrgXqDlmP79NI",
+            "18z3vERjAzzG3gJoSyTxSqS4gF4w0dfnT", "1kwDAkOUxAs6e6D8AyTDRMqiM5rKfTupd"]
 weekly_sales_column = "Weekly Sales (Ratings * 5)"
 total_sales_column = "Total Sales (Total Ratings * 5)"
 weekly_by_total_sales_column = "Weekly Sales / Total Sales"
